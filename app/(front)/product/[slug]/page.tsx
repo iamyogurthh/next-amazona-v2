@@ -1,13 +1,33 @@
-import data from '@/lib/data'
+import AddToCart from '@/components/products/AddToCart'
+import productService from '@/lib/services/productService'
+import { convertDocToObj } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 
-export default function ProductDetails({
+export async function generateMetadata({
   params,
 }: {
   params: { slug: string }
 }) {
-  const product = data.products.find((product) => product.slug === params.slug)
+  const { slug } = await params
+  const product = await productService.getBySlug(slug)
+  if (!product) {
+    return { title: 'Product not found' }
+  }
+
+  return {
+    title: product.name,
+    description: product.description,
+  }
+}
+
+export default async function ProductDetails({
+  params,
+}: {
+  params: { slug: string }
+}) {
+  const { slug } = await params
+  const product = await productService.getBySlug(slug)
 
   if (!product) {
     return <div>Product Not Found</div>
@@ -60,11 +80,18 @@ export default function ProductDetails({
                 {product.countInStock > 0 ? 'In stock' : 'Out of stock'}
               </div>
             </div>
-            <div className="card-actions justify-center">
-              <button type="button" className="btn btn-primary w-full">
-                Add to cart
-              </button>
-            </div>
+            {product.countInStock !== 0 && (
+              <div className="card-actions justify-center">
+                <AddToCart
+                  item={{
+                    ...convertDocToObj(product),
+                    qty: 0,
+                    color: '',
+                    size: '',
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
